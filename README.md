@@ -9,7 +9,7 @@ From spring intializer use Java 17, Gradle-groovy and add dependency as follows:
 * Validation
 * Spring Data JDBC
 
-As JDBC has been added configure a DB. For DB, we have used docker MySQL image.
+As JDBC has been added, DB must be configured for the application to run. For DB, we have used docker MySQL image.
 
 Docker command to run after downloading SQL image:
 docker run --name task_db -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=<Password> -p 3306:3306 mysql:latest
