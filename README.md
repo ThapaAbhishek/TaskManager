@@ -17,7 +17,7 @@ docker run --name task_db -e MYSQL_ROOT_HOST=% -e MYSQL_ROOT_PASSWORD=<Password>
 This command creates a container call task_db with access to everyone and the SQL uses port no. 3306. 
 
 Now, to configure DB in the project following parameters need to set:
-* spring.datasource.url=jdbc:mysql://localhost:3306/mysql
+* spring.datasource.url=jdbc:mysql://localhost:3306/taskManager
 * spring.datasource.password=Password
 * spring.datasource.username=root
 
@@ -27,3 +27,9 @@ The following property is for connecting above mentioned DB.
 Apart from that, gradle properties also need to have implementation _**mysql:mysql-connector-java:8.0.33**_ to include MySQL JDBC in the project.
 
 # CRUD Operations
+
+### Creating Table using schema.sql
+
+To  create table using schema.sql, place the schema.sql having create query in src/main/resources and add the following properties to application.properties:
+
+**spring.sql.init.mode=always**
