@@ -33,3 +33,7 @@ Apart from that, gradle properties also need to have implementation _**mysql:mys
 To  create table using schema.sql, place the schema.sql having create query in src/main/resources and add the following properties to application.properties:
 
 **spring.sql.init.mode=always**
+
+### Creating Table using Bean
+
+To create table using Bean, we need to use JDBC template. A component class is created which uses jdbcTemplate to execute create table query after initialization of bean. ClassName: com/TaskManager/TaskManager/configuration/TableInitializer.java
