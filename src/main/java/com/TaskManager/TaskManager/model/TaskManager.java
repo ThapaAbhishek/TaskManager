@@ -1,12 +1,10 @@
 package com.TaskManager.TaskManager.model;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Data;
+import lombok.ToString;
 
-
-@Getter
-@Setter
-
+@Data
+@ToString
 public class TaskManager {
 
     private int id;
@@ -16,15 +14,4 @@ public class TaskManager {
     private String taskCreatedDate;
     private String taskDueDate;
 
-    @Override
-    public String toString() {
-        return "TaskManager{" +
-                "id=" + id +
-                ", taskTitle='" + taskTitle + '\'' +
-                ", taskDescription='" + taskDescription + '\'' +
-                ", taskStatus='" + taskStatus + '\'' +
-                ", taskCreatedDate='" + taskCreatedDate + '\'' +
-                ", taskDueDate='" + taskDueDate + '\'' +
-                '}';
-    }
 }

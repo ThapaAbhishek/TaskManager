@@ -37,3 +37,8 @@ To  create table using schema.sql, place the schema.sql having create query in s
 ### Creating Table using Bean
 
 To create table using Bean, we need to use JDBC template. A component class is created which uses jdbcTemplate to execute create table query after initialization of bean. ClassName: com/TaskManager/TaskManager/configuration/TableInitializer.java
+
+### Added  MVC Framework
+
+Added a REST API controller that uses Data Access Object class where actual SQL query is present. The controller maps the respective SQL queries to respective REST APIs.
+

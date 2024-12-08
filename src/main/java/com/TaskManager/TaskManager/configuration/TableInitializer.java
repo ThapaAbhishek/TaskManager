@@ -27,7 +27,6 @@ public class TableInitializer {
                     taskCreatedDate DATETIME,
                     taskDueDate DATETIME
                 );
-
                 """;
         jdbcTemplate.execute(createTableSql);
         System.out.println("TaskManager table initialized.");
