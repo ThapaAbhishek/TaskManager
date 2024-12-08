@@ -42,3 +42,7 @@ To create table using Bean, we need to use JDBC template. A component class is c
 
 Added a REST API controller that uses Data Access Object class where actual SQL query is present. The controller maps the respective SQL queries to respective REST APIs.
 
+# Validation Mechanism
+
+To validate input fields we can use spring validation. Now, the model class needs to have several validation logic like @NotBlank,@size etc. To enforce validation @Valid must be passed.
+Now the validation might throw error. To know which error is encountered a new class is created which advice controller to display respective help message.
