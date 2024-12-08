@@ -2,6 +2,7 @@ package com.TaskManager.TaskManager;
 
 import com.TaskManager.TaskManager.dao.TaskManagerDAO;
 import com.TaskManager.TaskManager.model.TaskManager;
+import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,7 +17,7 @@ public class TaskManagerController {
     }
 
     @PostMapping("/addTask")
-    public String addTaskManager(@RequestBody TaskManager taskManager) {
+    public String addTaskManager(@Valid @RequestBody TaskManager taskManager) {
         if (taskManagerDAO.get(taskManager.getTaskTitle()).isEmpty()) {
             taskManagerDAO.create(taskManager);
             return taskManager.getTaskTitle() + " titled task added";
@@ -27,8 +28,17 @@ public class TaskManagerController {
 
     @GetMapping("/allTasks")
     public List<TaskManager> allTasks() {
-        System.out.println(taskManagerDAO.list());
         return taskManagerDAO.list();
+    }
+
+    @GetMapping("/getTaskByStatus")
+    public List<TaskManager> getTaskByStatus(@RequestParam String taskStatus) {
+        return taskManagerDAO.getByStatus(taskStatus);
+    }
+
+    @GetMapping("/getTaskByDueDateRange")
+    public List<TaskManager> getTaskByDueDateRange(@RequestParam String startDate, @RequestParam String endDate) {
+        return taskManagerDAO.getTasksByDateRange(startDate, endDate);
     }
 
     @GetMapping("/taskById")
@@ -37,7 +47,7 @@ public class TaskManagerController {
     }
 
     @GetMapping("/taskByTitle")
-    public Optional<TaskManager> getTaskById(@RequestParam String title) {
+    public Optional<TaskManager> getTaskByTitle(@RequestParam String title) {
         return taskManagerDAO.get(title);
     }
 

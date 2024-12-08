@@ -125,4 +125,20 @@ public class TaskManagerDAO {
                 """;
         jdbcTemplate.update(deleteQuery, id);
     }
+
+    public List<TaskManager> getByStatus(String status) {
+        String filterQuery = """
+                SELECT * FROM TaskManager WHERE taskStatus = ?;
+                """;
+        return jdbcTemplate.query(filterQuery, taskManagerRowMapper, status);
+
+    }
+
+    public List<TaskManager> getTasksByDateRange(String startDate, String endDate) {
+        String dateRangeQuery = """
+        SELECT * FROM TaskManager 
+        WHERE taskDueDate BETWEEN ? AND ?;
+        """;
+        return jdbcTemplate.query(dateRangeQuery, taskManagerRowMapper, startDate, endDate);
+    }
 }
