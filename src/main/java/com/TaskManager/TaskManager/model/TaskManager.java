@@ -1,5 +1,6 @@
 package com.TaskManager.TaskManager.model;
 
+import com.TaskManager.TaskManager.Validators.ValidateDateInString;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.ToString;
@@ -21,8 +22,10 @@ public class TaskManager {
     @Pattern(regexp = "pending|completed|in-progress|in progress", message = "Task status must be one of: pending, completed, in-progress")
     private String taskStatus;
 
+    @ValidateDateInString
     private String taskCreatedDate;
 
+    @ValidateDateInString
     private String taskDueDate;
 
 }
