@@ -46,3 +46,7 @@ Added a REST API controller that uses Data Access Object class where actual SQL 
 
 To validate input fields we can use spring validation. Now, the model class needs to have several validation logic like @NotBlank,@size etc. To enforce validation @Valid must be passed.
 Now the validation might throw error. To know which error is encountered a new class is created which advice controller to display respective help message.
+
+# Custom Validation Annotator
+
+To create custom validator first create and interface like ValidateDateInString. It will need a class where logic should be implemented. The class with logic should implement ConstraintValidator class and override isValid method. The annotation ValidateDateInString can then be used for data validation.
