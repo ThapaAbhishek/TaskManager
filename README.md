@@ -50,3 +50,7 @@ Now the validation might throw error. To know which error is encountered a new c
 # Custom Validation Annotator
 
 To create custom validator first create and interface like ValidateDateInString. It will need a class where logic should be implemented. The class with logic should implement ConstraintValidator class and override isValid method. The annotation ValidateDateInString can then be used for data validation.
+
+# Added JWT Security
+
+To add JWT, first I created a custom JWT key, then implemented a request filter that checks if the provided token matches the hard coded one. If everything is fine then a dummy user is created for authentication and finally for each request the JWT verification is a must.
