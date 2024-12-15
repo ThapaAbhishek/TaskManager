@@ -1,8 +1,10 @@
 package com.TaskManager.TaskManager;
 
+import com.TaskManager.TaskManager.Security.JwtUtils;
 import com.TaskManager.TaskManager.dao.TaskManagerDAO;
 import com.TaskManager.TaskManager.model.TaskManager;
 import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -11,9 +13,18 @@ import java.util.Optional;
 @RestController
 public class TaskManagerController {
     private TaskManagerDAO taskManagerDAO;
+    private JwtUtils jwtUtil;
 
-    public TaskManagerController(TaskManagerDAO taskManager) {
+    public TaskManagerController(TaskManagerDAO taskManager, JwtUtils jwtUtils) {
         this.taskManagerDAO = taskManager;
+        this.jwtUtil = jwtUtils;
+    }
+
+    @PostMapping("/generateToken")
+    public ResponseEntity<String> generateToken(@RequestParam String username) {
+        // In a real app, validate username with the database
+        String token = jwtUtil.generateToken(username);
+        return ResponseEntity.ok(token);
     }
 
     @PostMapping("/addTask")

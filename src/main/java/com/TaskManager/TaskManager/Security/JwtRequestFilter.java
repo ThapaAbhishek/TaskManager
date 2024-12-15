@@ -31,10 +31,9 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
             String token = authorizationHeader.substring(7);
             if (jwtUtils.validateToken(token)) {
-                System.out.println("Valid token");
 
                 // Set a dummy authentication object
-                CustomAuthentication authentication = new CustomAuthentication("dummyUser");
+                CustomAuthentication authentication = new CustomAuthentication(jwtUtils.extractUserName(token));
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 SecurityContextHolder.getContext().setAuthentication(authentication);
             }
