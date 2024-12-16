@@ -53,4 +53,4 @@ To create custom validator first create and interface like ValidateDateInString.
 
 # Added JWT Security
 
-To add JWT, first I created a custom JWT key, then implemented a request filter that checks if the provided token matches the hard coded one. If everything is fine then a dummy user is created for authentication and finally for each request the JWT verification is a must.
+To add JWT, a JWT token generator has been used which takes in current username and current time. In the same generator utils, a validator is also defined which parses the JWT and gets the claims. If it successfully parse the JWT then the key is valid else not. Furthermore, the JWT token should also not exceed the expiry duration. If everything is fine then a dummy user is created for authentication and finally for each request the JWT verification is a must except for the generateToken API.
