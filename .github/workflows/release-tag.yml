@@ -1,0 +1,86 @@
+name: Auto Tag and Release on Version Change
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "../../gradle.properties"  # Change to the file where the version is stored
+
+permissions:
+  contents: write  # Allows GitHub Actions to push tags and create releases
+
+jobs:
+  tag_release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0  # Fetch full history for version comparison
+
+      - name: Extract previous version
+        id: old_version
+        run: |
+          if git show HEAD~1:gradle.properties >/dev/null 2>&1; then
+            git show HEAD~1:gradle.properties | grep "version=" > old_version.txt
+          else
+            echo "No previous version found" > old_version.txt
+          fi
+
+      - name: Extract current version
+        id: new_version
+        run: grep "version=" gradle.properties > new_version.txt
+
+      - name: Compare versions
+        id: compare
+        run: |
+          if ! diff -q old_version.txt new_version.txt >/dev/null 2>&1; then
+            echo "VERSION_CHANGED=true" >> $GITHUB_ENV
+          else
+            echo "VERSION_CHANGED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Extract version number
+        id: extract_version
+        run: |
+          VERSION=$(grep -oE '[0-9]+\.[0-9]+\.[0-9]+' gradle.properties | head -n 1)
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+
+      - name: Check if tag already exists
+        run: |
+          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+            echo "Tag v${VERSION} already exists. Skipping..."
+            exit 0
+          fi
+
+      - name: Generate changelog
+        if: env.VERSION_CHANGED == 'true'
+        run: |
+          LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
+          if [ -z "$LAST_TAG" ]; then
+            CHANGELOG=$(git log --pretty=format:'- %h %s' --reverse)
+          else
+            CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:'- %h %s' --reverse)
+          fi
+          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
+
+      - name: Create Git Tag
+        if: env.VERSION_CHANGED == 'true'
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git tag "v${VERSION}"
+          git push origin "v${VERSION}"
+
+      - name: Create GitHub Release
+        if: env.VERSION_CHANGED == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: "v${VERSION}"
+          name: "Release v${VERSION}"
+          body: |
+            ## Changes in this release:
+            ${{ env.CHANGELOG }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
