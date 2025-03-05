@@ -79,8 +79,8 @@ jobs:
         if: env.VERSION_CHANGED == 'true'
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: "v${VERSION}"
-          name: "Release v${VERSION}"
+          tag_name: "v${{ env.VERSION }}"  # Correct syntax
+          name: "v${{ env.VERSION }}"  # Correct syntax
           body: |
             ## Changes in this release:
             ${{ env.CHANGELOG }}
