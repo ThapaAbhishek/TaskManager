@@ -63,7 +63,9 @@ jobs:
           else
             CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:'- %h %s' --reverse)
           fi
-          echo "CHANGELOG=$CHANGELOG" >> $GITHUB_ENV
+          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
+          echo "$CHANGELOG" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
 
       - name: Create Git Tag
         if: env.VERSION_CHANGED == 'true'
