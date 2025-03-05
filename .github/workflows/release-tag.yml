@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "../../gradle.properties"  # Change to the file where the version is stored
+      - "gradle.properties"  # Change to the file where the version is stored
 
 permissions:
   contents: write  # Allows GitHub Actions to push tags and create releases
