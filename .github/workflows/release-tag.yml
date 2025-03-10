@@ -5,7 +5,7 @@ on:
     branches:
       - main
     paths:
-      - "gradle.properties"  # Change to the file where the version is stored
+      - "gradle.properties"  # Trigger only if this file changes
 
 permissions:
   contents: write  # Allows GitHub Actions to push tags and create releases
@@ -15,72 +15,112 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch full history for version comparison
 
-      - name: Extract previous version
-        id: old_version
+      - name: Extract previous versions
+        id: old_versions
         run: |
           if git show HEAD~1:gradle.properties >/dev/null 2>&1; then
-            git show HEAD~1:gradle.properties | grep "version=" > old_version.txt
+            OLD_MAIN_VERSION=$(git show HEAD~1:gradle.properties | grep -oP '(?<=mainVersion=)[0-9]+\.[0-9]+\.[0-9]+')
+            OLD_SDK_VERSION=$(git show HEAD~1:gradle.properties | grep -oP '(?<=sdkVersion=)[0-9]+\.[0-9]+\.[0-9]+')
           else
-            echo "No previous version found" > old_version.txt
+            OLD_MAIN_VERSION=""
+            OLD_SDK_VERSION=""
           fi
 
-      - name: Extract current version
-        id: new_version
-        run: grep "version=" gradle.properties > new_version.txt
+          echo "OLD_MAIN_VERSION=$OLD_MAIN_VERSION" >> $GITHUB_ENV
+          echo "OLD_SDK_VERSION=$OLD_SDK_VERSION" >> $GITHUB_ENV
+
+      - name: Extract current versions
+        id: new_versions
+        run: |
+          MAIN_VERSION=$(grep -oP '(?<=mainVersion=)[0-9]+\.[0-9]+\.[0-9]+' gradle.properties)
+          SDK_VERSION=$(grep -oP '(?<=sdkVersion=)[0-9]+\.[0-9]+\.[0-9]+' gradle.properties)
+
+          echo "MAIN_VERSION=$MAIN_VERSION" >> $GITHUB_ENV
+          echo "SDK_VERSION=$SDK_VERSION" >> $GITHUB_ENV
 
       - name: Compare versions
         id: compare
         run: |
-          if ! diff -q old_version.txt new_version.txt >/dev/null 2>&1; then
-            echo "VERSION_CHANGED=true" >> $GITHUB_ENV
-          else
-            echo "VERSION_CHANGED=false" >> $GITHUB_ENV
+          if [ "$OLD_MAIN_VERSION" != "$MAIN_VERSION" ]; then
+            echo "MAIN_CHANGED=true" >> $GITHUB_ENV
           fi
 
-      - name: Extract version number
-        id: extract_version
-        run: |
-          VERSION=$(grep -oP '(?<=version=)[0-9]+\.[0-9]+\.[0-9]+' gradle.properties | head -n 1)
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
-
-      - name: Check if tag already exists
-        run: |
-          if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
-            echo "Tag v${VERSION} already exists. Skipping..."
-            exit 0
+          if [ "$OLD_SDK_VERSION" != "$SDK_VERSION" ]; then
+            echo "SDK_CHANGED=true" >> $GITHUB_ENV
           fi
 
-      - name: Generate changelog
-        if: env.VERSION_CHANGED == 'true'
+      - name: Generate Changelog
+        id: generate_changelog
         run: |
+          echo "## Changelog" > changelog.md
+          echo "" >> changelog.md
+
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
           if [ -z "$LAST_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:'- %h %s' --reverse)
           else
             CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:'- %h %s' --reverse)
           fi
+
+          echo "$CHANGELOG" >> changelog.md
+          cat changelog.md
+
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG" >> $GITHUB_ENV
           echo "EOF" >> $GITHUB_ENV
 
-      - name: Create Git Tag
-        if: env.VERSION_CHANGED == 'true'
+      - name: Check if tags already exist
+        run: |
+          if git rev-parse "main-v${MAIN_VERSION}" >/dev/null 2>&1; then
+            echo "Main version tag already exists. Skipping..."
+            echo "MAIN_CHANGED=false" >> $GITHUB_ENV
+          fi
+
+          if git rev-parse "sdk-v${SDK_VERSION}" >/dev/null 2>&1; then
+            echo "SDK version tag already exists. Skipping..."
+            echo "SDK_CHANGED=false" >> $GITHUB_ENV
+          fi
+
+      - name: Create Git Tags
+        if: env.MAIN_CHANGED == 'true' || env.SDK_CHANGED == 'true'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
-          git tag "v${VERSION}"
-          git push origin "v${VERSION}"
 
-      - name: Create GitHub Release
-        if: env.VERSION_CHANGED == 'true'
+          if [ "$MAIN_CHANGED" == "true" ]; then
+            git tag "main-v${MAIN_VERSION}"
+            git push origin "main-v${MAIN_VERSION}"
+            echo "✅ Tagged main: main-v${MAIN_VERSION}"
+          fi
+
+          if [ "$SDK_CHANGED" == "true" ]; then
+            git tag "sdk-v${SDK_VERSION}"
+            git push origin "sdk-v${SDK_VERSION}"
+            echo "✅ Tagged sdkRelease: sdk-v${SDK_VERSION}"
+          fi
+
+      - name: Create GitHub Release for main
         uses: softprops/action-gh-release@v1
+        if: env.MAIN_CHANGED == 'true'
         with:
-          tag_name: "v${{ env.VERSION }}"  # Correct syntax
-          name: "v${{ env.VERSION }}"  # Correct syntax
+          tag_name: "main-v${{ env.MAIN_VERSION }}"
+          name: "Main Release ${{ env.MAIN_VERSION }}"
+          body: |
+            ## Changes in this release:
+            ${{ env.CHANGELOG }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create GitHub Release for sdkRelease
+        uses: softprops/action-gh-release@v1
+        if: env.SDK_CHANGED == 'true'
+        with:
+          tag_name: "sdk-v${{ env.SDK_VERSION }}"
+          name: "SDK Release ${{ env.SDK_VERSION }}"
           body: |
             ## Changes in this release:
             ${{ env.CHANGELOG }}
