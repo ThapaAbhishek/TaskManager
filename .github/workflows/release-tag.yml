@@ -63,14 +63,12 @@ jobs:
             git push origin "sdk-v${SDK_VERSION}"
           fi
 
-      # 🗜️ Create ZIP for Main Folder
       - name: Create ZIP for Main
         if: env.MAIN_CHANGED == 'true'
         run: |
           zip -r main-${MAIN_VERSION}.zip src/
           echo "MAIN_ZIP=main-${MAIN_VERSION}.zip" >> $GITHUB_ENV
 
-      # 🗜️ Create ZIP for SDK Release Folder
       - name: Create ZIP for SDK
         if: env.SDK_CHANGED == 'true'
         run: |
