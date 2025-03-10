@@ -67,14 +67,14 @@ jobs:
       - name: Create ZIP for Main
         if: env.MAIN_CHANGED == 'true'
         run: |
-          zip -r main-${MAIN_VERSION}.zip main/
+          zip -r main-${MAIN_VERSION}.zip src/
           echo "MAIN_ZIP=main-${MAIN_VERSION}.zip" >> $GITHUB_ENV
 
       # 🗜️ Create ZIP for SDK Release Folder
       - name: Create ZIP for SDK
         if: env.SDK_CHANGED == 'true'
         run: |
-          zip -r sdk-${SDK_VERSION}.zip sdkRelease/
+          zip -r sdk-${SDK_VERSION}.zip sdk/
           echo "SDK_ZIP=sdk-${SDK_VERSION}.zip" >> $GITHUB_ENV
 
       - name: Create GitHub Release for Main
