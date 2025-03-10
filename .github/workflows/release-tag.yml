@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 2  # Ensure we get the previous version
 
       - name: Extract previous versions
         id: old_versions
@@ -71,7 +71,7 @@ jobs:
             echo "SDK_CHANGED=false" >> $GITHUB_ENV
           fi
 
-      - name: Create Git Tags
+      - name: Create and Push Git Tags
         if: env.MAIN_CHANGED == 'true' || env.SDK_CHANGED == 'true'
         run: |
           git config --global user.name "GitHub Actions"
@@ -79,12 +79,12 @@ jobs:
 
           if [ "$MAIN_CHANGED" == "true" ]; then
             git tag "main-v${MAIN_VERSION}"
+            git push origin "main-v${MAIN_VERSION}"
           fi
           if [ "$SDK_CHANGED" == "true" ]; then
             git tag "sdk-v${SDK_VERSION}"
+            git push origin "sdk-v${SDK_VERSION}"
           fi
-
-          git push --tags  # Push both tags at the same time
 
       - name: Create GitHub Release for main
         uses: softprops/action-gh-release@v1
@@ -97,6 +97,7 @@ jobs:
             ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
+          make_latest: false  # Do NOT override SDK release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -111,5 +112,6 @@ jobs:
             ${{ env.CHANGELOG }}
           draft: false
           prerelease: false
+          make_latest: false  # Do NOT override Main release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
