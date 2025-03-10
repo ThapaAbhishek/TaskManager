@@ -17,7 +17,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2  # Ensure we get the previous version
+          fetch-depth: 0  # Fetch full history for version comparison
 
       - name: Extract previous versions
         id: old_versions
@@ -51,12 +51,18 @@ jobs:
       - name: Generate Changelog
         id: generate_changelog
         run: |
+          echo "## Changelog" > changelog.md
+          echo "" >> changelog.md
+
           LAST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo '')
           if [ -z "$LAST_TAG" ]; then
             CHANGELOG=$(git log --pretty=format:'- %h %s' --reverse)
           else
             CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:'- %h %s' --reverse)
           fi
+
+          echo "$CHANGELOG" >> changelog.md
+          cat changelog.md
 
           echo "CHANGELOG<<EOF" >> $GITHUB_ENV
           echo "$CHANGELOG" >> $GITHUB_ENV
@@ -65,13 +71,16 @@ jobs:
       - name: Check if tags already exist
         run: |
           if git rev-parse "main-v${MAIN_VERSION}" >/dev/null 2>&1; then
+            echo "Main version tag already exists. Skipping..."
             echo "MAIN_CHANGED=false" >> $GITHUB_ENV
           fi
+
           if git rev-parse "sdk-v${SDK_VERSION}" >/dev/null 2>&1; then
+            echo "SDK version tag already exists. Skipping..."
             echo "SDK_CHANGED=false" >> $GITHUB_ENV
           fi
 
-      - name: Create and Push Git Tags
+      - name: Create Git Tags
         if: env.MAIN_CHANGED == 'true' || env.SDK_CHANGED == 'true'
         run: |
           git config --global user.name "GitHub Actions"
@@ -80,10 +89,13 @@ jobs:
           if [ "$MAIN_CHANGED" == "true" ]; then
             git tag "main-v${MAIN_VERSION}"
             git push origin "main-v${MAIN_VERSION}"
+            echo "✅ Tagged main: main-v${MAIN_VERSION}"
           fi
+
           if [ "$SDK_CHANGED" == "true" ]; then
             git tag "sdk-v${SDK_VERSION}"
             git push origin "sdk-v${SDK_VERSION}"
+            echo "✅ Tagged sdkRelease: sdk-v${SDK_VERSION}"
           fi
 
       - name: Create GitHub Release for main
@@ -95,9 +107,6 @@ jobs:
           body: |
             ## Changes in this release:
             ${{ env.CHANGELOG }}
-          draft: false
-          prerelease: false
-          make_latest: false  # Do NOT override SDK release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -110,8 +119,5 @@ jobs:
           body: |
             ## Changes in this release:
             ${{ env.CHANGELOG }}
-          draft: false
-          prerelease: false
-          make_latest: false  # Do NOT override Main release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
