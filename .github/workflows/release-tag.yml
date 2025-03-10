@@ -22,13 +22,8 @@ jobs:
       - name: Extract previous versions
         id: old_versions
         run: |
-          if git show HEAD~1:gradle.properties >/dev/null 2>&1; then
-            OLD_MAIN_VERSION=$(git show HEAD~1:gradle.properties | grep -oP '(?<=mainVersion=)[0-9]+\.[0-9]+\.[0-9]+')
-            OLD_SDK_VERSION=$(git show HEAD~1:gradle.properties | grep -oP '(?<=sdkVersion=)[0-9]+\.[0-9]+\.[0-9]+')
-          else
-            OLD_MAIN_VERSION=""
-            OLD_SDK_VERSION=""
-          fi
+          OLD_MAIN_VERSION=$(git show HEAD~1:gradle.properties 2>/dev/null | grep -oP '(?<=mainVersion=)[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+          OLD_SDK_VERSION=$(git show HEAD~1:gradle.properties 2>/dev/null | grep -oP '(?<=sdkVersion=)[0-9]+\.[0-9]+\.[0-9]+' || echo "")
 
           echo "OLD_MAIN_VERSION=$OLD_MAIN_VERSION" >> $GITHUB_ENV
           echo "OLD_SDK_VERSION=$OLD_SDK_VERSION" >> $GITHUB_ENV
