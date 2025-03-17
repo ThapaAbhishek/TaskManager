@@ -1,11 +1,10 @@
 name: Auto Tag and Release on Version Change
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - "gradle.properties"
+  workflow_run:
+    workflows: ["Auto-Increment Version"]
+    types:
+      - completed
 
 permissions:
   contents: write
@@ -58,9 +57,11 @@ jobs:
             CHANGELOG=$(git log ${LAST_TAG}..HEAD --pretty=format:'- %h %s' --reverse)
           fi
 
-          echo "CHANGELOG<<EOF" >> $GITHUB_ENV
-          echo "$CHANGELOG" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
+          {
+            echo "CHANGELOG<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> $GITHUB_ENV
 
       - name: Check if tags already exist
         run: |
