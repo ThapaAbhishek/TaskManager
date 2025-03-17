@@ -1,0 +1,120 @@
+name: Auto-Increment Version
+
+
+#  Trigger the workflow when files in "src/" or "sdk/" change
+on:
+  push:
+    paths:
+      - "src/**"   # Detect changes in src/
+      - "sdk/**"   # Detect changes in sdk/
+    branches:
+      - main  # Change this if using a different branch
+
+jobs: #  Define the jobs to run
+  update-version:
+    runs-on: ubuntu-latest  #  Run on the latest Ubuntu environment
+
+    steps:
+      #  Step 1: Checkout the repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Ensure full history is available
+
+      #  Step 2: Configure Git settings for automatic commits
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      #  Step 3: Read the current versions from gradle.properties
+      - name: Read current versions
+        id: read_versions
+        run: |
+          MAIN_VERSION=$(grep "^mainVersion=" gradle.properties | cut -d= -f2)
+          SDK_VERSION=$(grep "^sdkVersion=" gradle.properties | cut -d= -f2)
+          echo "MAIN_VERSION=$MAIN_VERSION" >> $GITHUB_ENV
+          echo "SDK_VERSION=$SDK_VERSION" >> $GITHUB_ENV
+
+      #  Step 4: Detect if "src/" or "sdk/" has changed
+      - name: Detect Changes
+        id: detect_changes
+        run: |
+          MAIN_CHANGED=false
+          SDK_CHANGED=false
+
+          # Check if any files in src/ have changed
+          if git diff --name-only HEAD^ HEAD | grep "^src/" > /dev/null; then
+            MAIN_CHANGED=true
+          fi
+
+          # Check if any files in sdk/ have changed
+          if git diff --name-only HEAD^ HEAD | grep "^sdk/" > /dev/null; then
+            SDK_CHANGED=true
+          fi
+
+          # Store the result in GitHub Actions environment variables
+          echo "MAIN_CHANGED=$MAIN_CHANGED" >> $GITHUB_ENV
+          echo "SDK_CHANGED=$SDK_CHANGED" >> $GITHUB_ENV
+
+      #  Step 5: Increment the version number if needed
+      - name: Increment Versions if Needed
+        id: increment_version
+        run: |
+          # Function to increment the version correctly
+          increment_version() {
+            local version=$1
+            local major=$(echo $version | cut -d. -f1)
+            local minor=$(echo $version | cut -d. -f2)
+            local patch=$(echo $version | cut -d. -f3)
+
+            # If patch is 9, reset it and increase minor
+            if [ "$patch" -eq 9 ]; then
+                patch=0
+                minor=$((minor + 1))
+            else
+                patch=$((patch + 1))
+            fi
+
+            # If minor is 9 and patch was 9 (rolled over), reset minor and bump major
+            if [ "$minor" -eq 10 ]; then
+                minor=0
+                major=$((major + 1))
+            fi
+
+            echo "$major.$minor.$patch"
+          }
+
+          # Store the new version numbers
+          NEW_MAIN_VERSION=$MAIN_VERSION
+          NEW_SDK_VERSION=$SDK_VERSION
+          UPDATE_NEEDED=false  # Track if any update happened
+
+          # Increment mainVersion if src/ changed
+          if [ "$MAIN_CHANGED" = "true" ]; then
+            NEW_MAIN_VERSION=$(increment_version "$MAIN_VERSION")
+            UPDATE_NEEDED=true
+          fi
+
+          # Increment sdkVersion if sdk/ changed
+          if [ "$SDK_CHANGED" = "true" ]; then
+            NEW_SDK_VERSION=$(increment_version "$SDK_VERSION")
+            UPDATE_NEEDED=true
+          fi
+
+          # Update the gradle.properties file only if a change is detected
+          if [ "$UPDATE_NEEDED" = "true" ]; then
+            sed -i "s/^mainVersion=.*/mainVersion=$NEW_MAIN_VERSION/" gradle.properties
+            sed -i "s/^sdkVersion=.*/sdkVersion=$NEW_SDK_VERSION/" gradle.properties
+            echo "UPDATED=true" >> $GITHUB_ENV
+          else
+            echo "UPDATED=false" >> $GITHUB_ENV
+          fi
+
+      #  Step 6: Commit and push the updated version numbers
+      - name: Commit and Push Version Changes
+        if: env.UPDATED == 'true'  # Only run if version was updated
+        run: |
+          git add gradle.properties
+          git commit -m "Auto-incremented version(s): mainVersion -> $NEW_MAIN_VERSION, sdkVersion -> $NEW_SDK_VERSION"
+          git push origin main  # Change "main" if using a different branch
