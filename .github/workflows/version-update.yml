@@ -107,6 +107,8 @@ jobs: #  Define the jobs to run
             sed -i "s/^mainVersion=.*/mainVersion=$NEW_MAIN_VERSION/" gradle.properties
             sed -i "s/^sdkVersion=.*/sdkVersion=$NEW_SDK_VERSION/" gradle.properties
             echo "UPDATED=true" >> $GITHUB_ENV
+            echo "NEW_MAIN_VERSION=$NEW_MAIN_VERSION" >> $GITHUB_ENV
+            echo "NEW_SDK_VERSION=$NEW_SDK_VERSION" >> $GITHUB_ENV
           else
             echo "UPDATED=false" >> $GITHUB_ENV
           fi
