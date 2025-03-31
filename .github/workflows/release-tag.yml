@@ -18,31 +18,21 @@ jobs:
         with:
           fetch-depth: 0  # Fetch history for version comparison
 
-      - name: Extract previous versions
+      - name: Extract previous sdkVersion
         id: old_versions
         run: |
-          OLD_MAIN_VERSION=$(git show HEAD~1:gradle.properties 2>/dev/null | grep -oP '(?<=mainVersion=)[0-9]+\.[0-9]+\.[0-9]+' || echo "")
-          OLD_SDK_VERSION=$(git show HEAD~1:gradle.properties 2>/dev/null | grep -oP '(?<=sdkVersion=)[0-9]+\.[0-9]+\.[0-9]+' || echo "")
-
-          echo "OLD_MAIN_VERSION=$OLD_MAIN_VERSION" >> $GITHUB_ENV
+          OLD_SDK_VERSION=$(git show HEAD~1:gradle.properties 2>/dev/null | grep -oP '(?<=version=)[0-9]+\.[0-9]+\.[0-9]+' || echo "")
           echo "OLD_SDK_VERSION=$OLD_SDK_VERSION" >> $GITHUB_ENV
 
-      - name: Extract current versions
+      - name: Extract current sdkVersion
         id: new_versions
         run: |
-          MAIN_VERSION=$(grep -oP '(?<=mainVersion=)[0-9]+\.[0-9]+\.[0-9]+' gradle.properties)
-          SDK_VERSION=$(grep -oP '(?<=sdkVersion=)[0-9]+\.[0-9]+\.[0-9]+' gradle.properties)
-
-          echo "MAIN_VERSION=$MAIN_VERSION" >> $GITHUB_ENV
+          SDK_VERSION=$(grep -oP '(?<=version=)[0-9]+\.[0-9]+\.[0-9]+' gradle.properties)
           echo "SDK_VERSION=$SDK_VERSION" >> $GITHUB_ENV
 
-      - name: Compare versions
+      - name: Compare sdkVersions
         id: compare
         run: |
-          if [ "$OLD_MAIN_VERSION" != "$MAIN_VERSION" ]; then
-            echo "MAIN_CHANGED=true" >> $GITHUB_ENV
-          fi
-
           if [ "$OLD_SDK_VERSION" != "$SDK_VERSION" ]; then
             echo "SDK_CHANGED=true" >> $GITHUB_ENV
           fi
@@ -63,56 +53,25 @@ jobs:
             echo "EOF"
           } >> $GITHUB_ENV
 
-      - name: Check if tags already exist
+      - name: Check if sdkVersion tag already exists
         run: |
-          if git rev-parse "main-v${MAIN_VERSION}" >/dev/null 2>&1; then
-            echo "MAIN_CHANGED=false" >> $GITHUB_ENV
-          fi
           if git rev-parse "sdk-v${SDK_VERSION}" >/dev/null 2>&1; then
             echo "SDK_CHANGED=false" >> $GITHUB_ENV
           fi
 
-      - name: Create and Push Git Tags
-        if: env.MAIN_CHANGED == 'true' || env.SDK_CHANGED == 'true'
+      - name: Create and Push Git Tag for SDK
+        if: env.SDK_CHANGED == 'true'
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
+          git tag "sdk-v${SDK_VERSION}"
+          git push origin "sdk-v${SDK_VERSION}"
 
-          if [ "$MAIN_CHANGED" == "true" ]; then
-            git tag "main-v${MAIN_VERSION}"
-            git push origin "main-v${MAIN_VERSION}"
-          fi
-          if [ "$SDK_CHANGED" == "true" ]; then
-            git tag "sdk-v${SDK_VERSION}"
-            git push origin "sdk-v${SDK_VERSION}"
-          fi
-
-      # 🗜️ Create ZIP for Main Folder
-      - name: Create ZIP for Main
-        if: env.MAIN_CHANGED == 'true'
-        run: |
-          zip -r main-${MAIN_VERSION}.zip src/
-          echo "MAIN_ZIP=main-${MAIN_VERSION}.zip" >> $GITHUB_ENV
-
-      # 🗜️ Create ZIP for SDK Release Folder
-      - name: Create ZIP for SDK
+      - name: Create ZIP for SDK Release Folder
         if: env.SDK_CHANGED == 'true'
         run: |
           zip -r sdk-${SDK_VERSION}.zip sdk/
           echo "SDK_ZIP=sdk-${SDK_VERSION}.zip" >> $GITHUB_ENV
-
-      - name: Create GitHub Release for Main
-        uses: softprops/action-gh-release@v1
-        if: env.MAIN_CHANGED == 'true'
-        with:
-          tag_name: "main-v${{ env.MAIN_VERSION }}"
-          name: "Main Release ${{ env.MAIN_VERSION }}"
-          body: |
-            ## Changes in this release:
-            ${{ env.CHANGELOG }}
-          files: ${{ env.MAIN_ZIP }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create GitHub Release for SDK
         uses: softprops/action-gh-release@v1
