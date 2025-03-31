@@ -102,10 +102,15 @@ jobs: # Define the jobs to run
 
           # Update the gradle.properties file only if a change is detected
           if [ "$UPDATE_NEEDED" = "true" ]; then
-            sed -i "s/^sdkVersion=.*/version=$NEW_SDK_VERSION/" gradle.properties
+            sed -i "s/^version=.*/version=$NEW_SDK_VERSION/" gradle.properties
             echo "UPDATED=true" >> $GITHUB_ENV
             echo "NEW_SDK_VERSION=$NEW_SDK_VERSION" >> $GITHUB_ENV
           else
+            echo "UPDATED=false" >> $GITHUB_ENV
+
+          # Verify if the file was updated
+          if git diff --exit-code gradle.properties; then
+            echo "No changes detected in gradle.properties"
             echo "UPDATED=false" >> $GITHUB_ENV
           fi
 
