@@ -107,6 +107,7 @@ jobs: # Define the jobs to run
             echo "NEW_SDK_VERSION=$NEW_SDK_VERSION" >> $GITHUB_ENV
           else
             echo "UPDATED=false" >> $GITHUB_ENV
+          fi
 
           # Verify if the file was updated
           if git diff --exit-code gradle.properties; then
